@@ -17,46 +17,35 @@
     const { useState } = React;
 
     function GoogleAdsSimulator() {
-      const [searchVolume, setSearchVolume] = useState(10000);
       const [cpc, setCpc] = useState(450);
-      const [rankLoss, setRankLoss] = useState(50);
-      const [matchType, setMatchType] = useState('exact');
       const [monthlyBudget, setMonthlyBudget] = useState(500000);
-      
-      // カスタムシナリオの設定
       const [customCtr, setCustomCtr] = useState(4);
       const [customCvr, setCustomCvr] = useState(0.6);
-      const [customRankLoss, setCustomRankLoss] = useState(50);
       const [customBudget, setCustomBudget] = useState(500000);
-      
-      // タブ切り替え
       const [activeTab, setActiveTab] = useState('all');
 
       const ctrOptions = [3, 5, 7];
       const cvrOptions = [0.5, 0.75, 1];
 
-      const matchTypeMultiplier = {
-        exact: 1.1,
-        phrase: 1.925,
-        broad: 3.3
-      };
-
-      const calculateResults = (ctr, cvr, scenarioRankLoss, scenarioBudget) => {
-        const impressionsAfterLoss = searchVolume * ((100 - scenarioRankLoss) / 100);
-        const impressionsAfterMatch = impressionsAfterLoss * matchTypeMultiplier[matchType];
-        const clicks = impressionsAfterMatch * (ctr / 100);
-        const adSpend = clicks * cpc;
-        const conversions = clicks * (cvr / 100);
-        const cpa = conversions > 0 ? adSpend / conversions : 0;
-        const monthlyConversions = scenarioBudget / cpa;
+      const calculateResults = (ctr, cvr, scenarioBudget) => {
+        const monthlyClicks = scenarioBudget / cpc;
+        const dailyClicks = Math.round(monthlyClicks / 30);
+        const monthlyConversions = monthlyClicks * (cvr / 100);
+        const cpa = monthlyConversions > 0 ? scenarioBudget / monthlyConversions : 0;
+        const budget10More = scenarioBudget + 100000;
+        const budget20More = scenarioBudget + 200000;
+        const cv10More = (budget10More / cpc) * (cvr / 100);
+        const cv20More = (budget20More / cpc) * (cvr / 100);
 
         return {
-          impressions: Math.round(impressionsAfterMatch),
-          clicks: Math.round(clicks),
-          adSpend: Math.round(adSpend),
-          conversions: parseFloat(conversions.toFixed(2)),
+          monthlyClicks: Math.round(monthlyClicks),
+          dailyClicks,
+          monthlyConversions: parseFloat(monthlyConversions.toFixed(1)),
           cpa: Math.round(cpa),
-          monthlyConversions: parseFloat(monthlyConversions.toFixed(1))
+          cv10More: parseFloat(cv10More.toFixed(1)),
+          cvIncrease10: parseFloat((cv10More - monthlyConversions).toFixed(1)),
+          cv20More: parseFloat(cv20More.toFixed(1)),
+          cvIncrease20: parseFloat((cv20More - monthlyConversions).toFixed(1))
         };
       };
 
@@ -72,15 +61,14 @@
           ctr,
           cvr,
           color: getScenarioColor(ctr, cvr),
-          ...calculateResults(ctr, cvr, rankLoss, monthlyBudget)
+          ...calculateResults(ctr, cvr, monthlyBudget)
         }))
       );
 
       const customResult = {
         ctr: customCtr,
         cvr: customCvr,
-        color: 'bg-orange-500',
-        ...calculateResults(customCtr, customCvr, customRankLoss, customBudget)
+        ...calculateResults(customCtr, customCvr, customBudget)
       };
 
       return (
@@ -91,9 +79,7 @@
                 <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-                  Google広告シミュレーター
-                </h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Google広告シミュレーター</h1>
               </div>
               <p className="text-gray-600">現実的な数値でシミュレーションを作成</p>
             </div>
@@ -105,72 +91,14 @@
                 </svg>
                 入力項目
               </h2>
-
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    月間検索ボリューム
-                  </label>
-                  <input
-                    type="number"
-                    value={searchVolume}
-                    onChange={(e) => setSearchVolume(Number(e.target.value))}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
-                  />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">CPC中央値（円）</label>
+                  <input type="number" value={cpc} onChange={(e) => setCpc(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    CPC中央値（円）
-                  </label>
-                  <input
-                    type="number"
-                    value={cpc}
-                    onChange={(e) => setCpc(Number(e.target.value))}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    ランク損失率（%）
-                  </label>
-                  <input
-                    type="number"
-                    value={rankLoss}
-                    onChange={(e) => setRankLoss(Number(e.target.value))}
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">推奨：50〜60%</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    マッチタイプ
-                  </label>
-                  <select
-                    value={matchType}
-                    onChange={(e) => setMatchType(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
-                  >
-                    <option value="exact">完全一致（110%）</option>
-                    <option value="phrase">フレーズ一致（192.5%）</option>
-                    <option value="broad">インテントマッチ（330%）</option>
-                  </select>
-                </div>
-
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    月間予算（円）
-                  </label>
-                  <input
-                    type="number"
-                    value={monthlyBudget}
-                    onChange={(e) => setMonthlyBudget(Number(e.target.value))}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
-                  />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">月間予算（円）</label>
+                  <input type="number" value={monthlyBudget} onChange={(e) => setMonthlyBudget(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
                 </div>
               </div>
             </div>
@@ -183,77 +111,40 @@
                 <h2 className="text-2xl font-bold text-gray-800">シミュレーション結果</h2>
               </div>
 
-              {/* タブ切り替え */}
               <div className="flex gap-2 mb-6 border-b-2 border-gray-200">
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all ${
-                    activeTab === 'all'
-                      ? 'text-indigo-600 border-b-4 border-indigo-600 -mb-0.5'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
-                  </svg>
+                <button onClick={() => setActiveTab('all')} className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all ${activeTab === 'all' ? 'text-indigo-600 border-b-4 border-indigo-600 -mb-0.5' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" /></svg>
                   全パターン（9種類）
                 </button>
-                <button
-                  onClick={() => setActiveTab('custom')}
-                  className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all ${
-                    activeTab === 'custom'
-                      ? 'text-orange-600 border-b-4 border-orange-600 -mb-0.5'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <button onClick={() => setActiveTab('custom')} className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all ${activeTab === 'custom' ? 'text-orange-600 border-b-4 border-orange-600 -mb-0.5' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   カスタム設定
                 </button>
               </div>
 
-              {/* 全パターン表示 */}
               {activeTab === 'all' && (
                 <div>
                   <div className="grid md:grid-cols-3 gap-6">
                     {allPatterns.map((pattern, idx) => (
                       <div key={idx} className="border-2 border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow">
-                        <div className={`${pattern.color} text-white px-3 py-2 rounded-lg text-center font-bold mb-4 text-sm`}>
-                          CTR {pattern.ctr}% × CVR {pattern.cvr}%
-                        </div>
-                        
+                        <div className={`${pattern.color} text-white px-3 py-2 rounded-lg text-center font-bold mb-4 text-sm`}>CTR {pattern.ctr}% × CVR {pattern.cvr}%</div>
                         <div className="space-y-2 text-sm">
-                          <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">想定IMP</span>
-                            <span className="font-bold text-gray-800">{pattern.impressions.toLocaleString()}回</span>
+                          <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">月間クリック数</span><span className="font-bold text-gray-800">{pattern.monthlyClicks.toLocaleString()}回</span></div>
+                          <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">1日あたり</span><span className="font-bold text-gray-800">{pattern.dailyClicks.toLocaleString()}回</span></div>
+                          <div className="flex justify-between items-center pb-2 border-b bg-yellow-50 p-2 rounded"><span className="text-gray-600 font-semibold">月間CV数</span><span className="font-bold text-xl text-indigo-600">{pattern.monthlyConversions}件</span></div>
+                          <div className="flex justify-between items-center pb-2 border-b bg-yellow-50 p-2 rounded"><span className="text-gray-600 font-semibold">想定CPA</span><span className="font-bold text-xl text-indigo-600">¥{pattern.cpa.toLocaleString()}</span></div>
+                        </div>
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">💡 予算を増やす場合</div>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            <div>+10万円 → 月間<span className="font-bold text-indigo-600">{pattern.cv10More}件</span> (+{pattern.cvIncrease10}件)</div>
+                            <div>+20万円 → 月間<span className="font-bold text-indigo-600">{pattern.cv20More}件</span> (+{pattern.cvIncrease20}件)</div>
                           </div>
-                          <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">想定クリック数</span>
-                            <span className="font-bold text-gray-800">{pattern.clicks.toLocaleString()}回</span>
-                          </div>
-                          <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">想定広告費</span>
-                            <span className="font-bold text-gray-800">¥{pattern.adSpend.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between items-center pb-2 border-b bg-yellow-50 p-2 rounded">
-                            <span className="text-gray-600 font-semibold">想定CV数</span>
-                            <span className="font-bold text-lg text-indigo-600">{pattern.conversions}件</span>
-                          </div>
-                          <div className="flex justify-between items-center pb-2 border-b bg-yellow-50 p-2 rounded">
-                            <span className="text-gray-600 font-semibold">想定CPA</span>
-                            <span className="font-bold text-lg text-indigo-600">¥{pattern.cpa.toLocaleString()}</span>
-                          </div>
-                          <div className="flex justify-between items-center pt-2 bg-indigo-50 p-3 rounded-lg">
-                            <span className="text-gray-700 font-semibold">月間CV数</span>
-                            <span className="font-bold text-xl text-indigo-700">{pattern.monthlyConversions}件</span>
-                          </div>
+                          <div className="text-xs text-gray-500 mt-2 italic">※CTR・CVRの改善でより効率的に成果を伸ばせます</div>
                         </div>
                       </div>
                     ))}
                   </div>
-                  
                   <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-indigo-200">
                     <h3 className="font-bold text-gray-800 mb-3 text-lg">💡 全パターン表示について</h3>
                     <ul className="space-y-2 text-sm text-gray-700">
@@ -261,127 +152,51 @@
                       <li>✓ 青色：保守的（CTR 3% × CVR 0.5%）</li>
                       <li>✓ 緑色：現実的（CTR 5% × CVR 0.75%）</li>
                       <li>✓ 紫色：楽観的（CTR 7% × CVR 1%）</li>
+                      <li>✓ 予算増額より<strong>広告改善（CTR・CVR向上）を優先</strong>しましょう</li>
                     </ul>
                   </div>
                 </div>
               )}
 
-              {/* カスタム表示 */}
               {activeTab === 'custom' && (
                 <div>
                   <div className="grid md:grid-cols-2 gap-8">
-                    {/* カスタム設定パネル */}
                     <div className="bg-orange-50 rounded-xl p-6 border-2 border-orange-200">
                       <h3 className="font-bold text-gray-800 mb-4 text-lg">カスタム設定</h3>
                       <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            CTR (%)
-                          </label>
-                          <input
-                            type="number"
-                            value={customCtr}
-                            onChange={(e) => setCustomCtr(Number(e.target.value))}
-                            step="0.1"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            CVR (%)
-                          </label>
-                          <input
-                            type="number"
-                            value={customCvr}
-                            onChange={(e) => setCustomCvr(Number(e.target.value))}
-                            step="0.1"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            ランク損失率 (%)
-                          </label>
-                          <input
-                            type="number"
-                            value={customRankLoss}
-                            onChange={(e) => setCustomRankLoss(Number(e.target.value))}
-                            min="0"
-                            max="100"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            月間予算 (円)
-                          </label>
-                          <input
-                            type="number"
-                            value={customBudget}
-                            onChange={(e) => setCustomBudget(Number(e.target.value))}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
+                        <div><label className="block text-sm font-semibold text-gray-700 mb-2">CTR (%)</label><input type="number" value={customCtr} onChange={(e) => setCustomCtr(Number(e.target.value))} step="0.1" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" /></div>
+                        <div><label className="block text-sm font-semibold text-gray-700 mb-2">CVR (%)</label><input type="number" value={customCvr} onChange={(e) => setCustomCvr(Number(e.target.value))} step="0.1" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" /></div>
+                        <div><label className="block text-sm font-semibold text-gray-700 mb-2">月間予算 (円)</label><input type="number" value={customBudget} onChange={(e) => setCustomBudget(Number(e.target.value))} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" /></div>
                       </div>
                     </div>
-
-                    {/* カスタム結果 */}
                     <div className="border-2 border-orange-300 rounded-xl p-6 bg-gradient-to-br from-orange-50 to-yellow-50">
-                      <div className="bg-orange-500 text-white px-4 py-3 rounded-lg text-center font-bold mb-6">
-                        カスタムシナリオ結果
-                      </div>
-                      
+                      <div className="bg-orange-500 text-white px-4 py-3 rounded-lg text-center font-bold mb-6">カスタムシナリオ結果</div>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">CTR</span>
-                          <span className="font-bold text-gray-800">{customResult.ctr}%</span>
+                        <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">CTR</span><span className="font-bold text-gray-800">{customResult.ctr}%</span></div>
+                        <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">CVR</span><span className="font-bold text-gray-800">{customResult.cvr}%</span></div>
+                        <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">予算</span><span className="font-bold text-gray-800">¥{customBudget.toLocaleString()}</span></div>
+                        <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">月間クリック数</span><span className="font-bold text-gray-800">{customResult.monthlyClicks.toLocaleString()}回</span></div>
+                        <div className="flex justify-between items-center pb-2 border-b"><span className="text-gray-600">1日あたり</span><span className="font-bold text-gray-800">{customResult.dailyClicks.toLocaleString()}回</span></div>
+                        <div className="flex justify-between items-center pb-2 border-b bg-yellow-100 p-3 rounded"><span className="text-gray-700 font-semibold">月間CV数</span><span className="font-bold text-2xl text-orange-600">{customResult.monthlyConversions}件</span></div>
+                        <div className="flex justify-between items-center pb-2 border-b bg-yellow-100 p-3 rounded"><span className="text-gray-700 font-semibold">想定CPA</span><span className="font-bold text-2xl text-orange-600">¥{customResult.cpa.toLocaleString()}</span></div>
+                      </div>
+                      <div className="mt-4 p-3 bg-orange-100 rounded-lg border border-orange-300">
+                        <div className="text-xs font-semibold text-gray-800 mb-2">💡 予算を増やす場合</div>
+                        <div className="text-xs text-gray-700 space-y-1">
+                          <div>+10万円 → 月間<span className="font-bold text-orange-700">{customResult.cv10More}件</span> (+{customResult.cvIncrease10}件)</div>
+                          <div>+20万円 → 月間<span className="font-bold text-orange-700">{customResult.cv20More}件</span> (+{customResult.cvIncrease20}件)</div>
                         </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">CVR</span>
-                          <span className="font-bold text-gray-800">{customResult.cvr}%</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">損失率</span>
-                          <span className="font-bold text-gray-800">{customRankLoss}%</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">予算</span>
-                          <span className="font-bold text-gray-800">¥{customBudget.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">想定IMP</span>
-                          <span className="font-bold text-gray-800">{customResult.impressions.toLocaleString()}回</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">想定クリック数</span>
-                          <span className="font-bold text-gray-800">{customResult.clicks.toLocaleString()}回</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                          <span className="text-gray-600">想定広告費</span>
-                          <span className="font-bold text-gray-800">¥{customResult.adSpend.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b bg-yellow-100 p-3 rounded">
-                          <span className="text-gray-700 font-semibold">想定CV数</span>
-                          <span className="font-bold text-xl text-orange-600">{customResult.conversions}件</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b bg-yellow-100 p-3 rounded">
-                          <span className="text-gray-700 font-semibold">想定CPA</span>
-                          <span className="font-bold text-xl text-orange-600">¥{customResult.cpa.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-2 bg-orange-100 p-4 rounded-lg">
-                          <span className="text-gray-800 font-bold">月間CV数</span>
-                          <span className="font-bold text-2xl text-orange-700">{customResult.monthlyConversions}件</span>
-                        </div>
+                        <div className="text-xs text-gray-600 mt-2 italic">※CTR・CVRの改善でより効率的に成果を伸ばせます</div>
                       </div>
                     </div>
                   </div>
-
                   <div className="mt-6 p-5 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border-2 border-orange-200">
                     <h3 className="font-bold text-gray-800 mb-3 text-lg">💡 カスタム設定について</h3>
                     <ul className="space-y-2 text-sm text-gray-700">
-                      <li>✓ 独自のCTR・CVR・損失率・予算でシミュレーション可能</li>
+                      <li>✓ 独自のCTR・CVR・予算でシミュレーション可能</li>
                       <li>✓ 実際の運用データを入れて検証できます</li>
                       <li>✓ 「もしこの数値だったら？」のシナリオテストに最適</li>
+                      <li>✓ 予算増額より<strong>広告改善を優先</strong>することをおすすめします</li>
                     </ul>
                   </div>
                 </div>
