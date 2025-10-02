@@ -59,7 +59,7 @@
         const maxClicks = monthlyBudget / cpc;
         const dailyClicks = Math.round(maxClicks / 30);
         const conversions = maxClicks * (cvr / 100);
-        const cpa = conversions > 0 ? monthlyBudget / conversions : 0;
+        const cpa = cpc / (cvr / 100); // CPA = CPC ÷ CVR
 
         return {
           clicks: Math.round(maxClicks),
@@ -129,32 +129,70 @@
               </h2>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">月間検索ボリューム</label>
-                  <input type="number" value={searchVolume} onChange={(e) => setSearchVolume(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">CPC中央値（円）</label>
-                  <input type="number" value={cpc} onChange={(e) => setCpc(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">ランク損失率（%）</label>
-                  <input type="number" value={rankLoss} onChange={(e) => setRankLoss(Number(e.target.value))} min="0" max="100" className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
-                  <p className="text-xs text-gray-500 mt-1">推奨：50〜60%</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">マッチタイプ</label>
-                  <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none">
-                    <option value="exact">完全一致（110%）</option>
-                    <option value="phrase">フレーズ一致（192.5%）</option>
-                    <option value="broad">インテントマッチ（330%）</option>
-                  </select>
-                </div>
+                {activeTab === 'volume' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">月間検索ボリューム</label>
+                      <input type="number" value={searchVolume} onChange={(e) => setSearchVolume(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">CPC中央値（円）</label>
+                      <input type="number" value={cpc} onChange={(e) => setCpc(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">ランク損失率（%）</label>
+                      <input type="number" value={rankLoss} onChange={(e) => setRankLoss(Number(e.target.value))} min="0" max="100" className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
+                      <p className="text-xs text-gray-500 mt-1">推奨：50〜60%</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">マッチタイプ</label>
+                      <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none">
+                        <option value="exact">完全一致（110%）</option>
+                        <option value="phrase">フレーズ一致（192.5%）</option>
+                        <option value="broad">インテントマッチ（330%）</option>
+                      </select>
+                    </div>
+                  </>
+                )}
                 {activeTab === 'budget' && (
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">月間予算（円）</label>
-                    <input type="number" value={monthlyBudget} onChange={(e) => setMonthlyBudget(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">CPC中央値（円）</label>
+                      <input type="number" value={cpc} onChange={(e) => setCpc(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">月間予算（円）</label>
+                      <input type="number" value={monthlyBudget} onChange={(e) => setMonthlyBudget(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none" />
+                    </div>
+                  </>
+                )}
+                {activeTab === 'custom' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">月間検索ボリューム</label>
+                      <input type="number" value={searchVolume} onChange={(e) => setSearchVolume(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">CPC中央値（円）</label>
+                      <input type="number" value={cpc} onChange={(e) => setCpc(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">ランク損失率（%）</label>
+                      <input type="number" value={rankLoss} onChange={(e) => setRankLoss(Number(e.target.value))} min="0" max="100" className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">マッチタイプ</label>
+                      <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none">
+                        <option value="exact">完全一致（110%）</option>
+                        <option value="phrase">フレーズ一致（192.5%）</option>
+                        <option value="broad">インテントマッチ（330%）</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">月間予算（円）※予算基準用</label>
+                      <input type="number" value={monthlyBudget} onChange={(e) => setMonthlyBudget(Number(e.target.value))} className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" />
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -199,7 +237,7 @@
                             <span className={`font-semibold ${pattern.isLowCV ? 'text-red-700' : 'text-gray-600'}`}>月間CV数</span>
                             <span className={`font-bold text-xl ${pattern.isLowCV ? 'text-red-600' : 'text-indigo-600'}`}>{pattern.conversions}件</span>
                           </div>
-                          {pattern.isLowCV && <div className="text-xs text-red-600 bg-red-50 p-2 rounded">⚠️ 1件未満</div>}
+                          {pattern.isLowCV && <div className="text-xs text-red-600 bg-red-50 p-2 rounded">⚠️ 1件未満：CV獲得の可能性が低い</div>}
                           <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-indigo-200">
                             <div className="text-xs text-gray-600 mb-1">💰 1件取るのに必要</div>
                             <div className="font-bold text-2xl text-indigo-700">¥{pattern.cpa.toLocaleString()}</div>
@@ -214,6 +252,7 @@
                       <li>✓ CTR（3%, 5%, 7%）× CVR（0.5%, 0.75%, 1%）の<strong>全9パターン</strong>を表示</li>
                       <li>✓ CPAは「CPC ÷ CVR」で計算（CTRは無関係）</li>
                       <li>✓ CVRを改善すれば、CPAは下がります</li>
+                      <li>✓ 予算を増やすより、CTR・CVRの改善で効率的に成果を伸ばせます</li>
                     </ul>
                   </div>
                 </div>
@@ -235,7 +274,7 @@
                             <span className={`font-semibold ${pattern.isLowCV ? 'text-red-700' : 'text-gray-600'}`}>月間CV数</span>
                             <span className={`font-bold text-xl ${pattern.isLowCV ? 'text-red-600' : 'text-green-600'}`}>{pattern.conversions}件</span>
                           </div>
-                          {pattern.isLowCV && <div className="text-xs text-red-600 bg-red-50 p-2 rounded">⚠️ 1件未満</div>}
+                          {pattern.isLowCV && <div className="text-xs text-red-600 bg-red-50 p-2 rounded">⚠️ 1件未満：CV獲得の可能性が低い</div>}
                           <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
                             <div className="text-xs text-gray-600 mb-1">💰 1件取るのに必要</div>
                             <div className="font-bold text-2xl text-green-700">¥{pattern.cpa.toLocaleString()}</div>
@@ -250,6 +289,7 @@
                       <li>✓ 設定した予算内で獲得できるCV数を表示</li>
                       <li>✓ CTRは計算に影響しません（予算÷CPC=クリック数）</li>
                       <li>✓ CVRを改善すれば、同じ予算でより多くのCV獲得が可能</li>
+                      <li>✓ 予算を増やす前に、まずCTR・CVRの改善を優先しましょう</li>
                     </ul>
                   </div>
                 </div>
@@ -263,7 +303,6 @@
                       <div className="space-y-4">
                         <div><label className="block text-sm font-semibold text-gray-700 mb-2">CTR (%)</label><input type="number" value={customCtr} onChange={(e) => setCustomCtr(Number(e.target.value))} step="0.1" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" /></div>
                         <div><label className="block text-sm font-semibold text-gray-700 mb-2">CVR (%)</label><input type="number" value={customCvr} onChange={(e) => setCustomCvr(Number(e.target.value))} step="0.1" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" /></div>
-                        <div><label className="block text-sm font-semibold text-gray-700 mb-2">月間予算（円）※予算基準用</label><input type="number" value={monthlyBudget} onChange={(e) => setMonthlyBudget(Number(e.target.value))} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none" /></div>
                       </div>
                     </div>
                     <div className="bg-orange-50 rounded-xl p-6 border-2 border-orange-200">
@@ -275,6 +314,8 @@
                             検索ボリューム基準
                           </div>
                           <div className="space-y-2">
+                            <div className="flex justify-between"><span className="text-gray-600">想定IMP</span><span className="font-bold">{customVolumeResult.impressions.toLocaleString()}回</span></div>
+                            <div className="flex justify-between"><span className="text-gray-600">想定クリック数</span><span className="font-bold">{customVolumeResult.clicks.toLocaleString()}回</span></div>
                             <div className="flex justify-between"><span className="text-gray-600">月間CV数</span><span className="font-bold text-lg">{customVolumeResult.conversions}件</span></div>
                             <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
                               <div className="text-xs text-gray-600">💰 1件取るのに必要</div>
@@ -289,6 +330,7 @@
                           </div>
                           <div className="space-y-2">
                             <div className="flex justify-between"><span className="text-gray-600">予算</span><span className="font-bold">¥{monthlyBudget.toLocaleString()}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-600">想定クリック数</span><span className="font-bold">{customBudgetResult.clicks.toLocaleString()}回</span></div>
                             <div className="flex justify-between"><span className="text-gray-600">月間CV数</span><span className="font-bold text-lg">{customBudgetResult.conversions}件</span></div>
                             <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
                               <div className="text-xs text-gray-600">💰 1件取るのに必要</div>
@@ -298,6 +340,14 @@
                         </div>
                       </div>
                     </div>
+                  </div>
+                  <div className="mt-6 p-5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200">
+                    <h3 className="font-bold text-gray-800 mb-3 text-lg">💡 カスタム設定について</h3>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li>✓ 自由にCTR・CVRを設定して、独自のシミュレーションが可能</li>
+                      <li>✓ 検索ボリューム基準と予算基準の両方の結果を同時確認</li>
+                      <li>✓ 実際の運用データを元に、より精度の高いシミュレーションを作成できます</li>
+                    </ul>
                   </div>
                 </div>
               )}
