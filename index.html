@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google広告シミュレーター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function GoogleAdsSimulator() {
+      const [searchVolume, setSearchVolume] = useState(10000);
+      const [cpc, setCpc] = useState(450);
+      const [rankLoss, setRankLoss] = useState(50);
+      const [matchType, setMatchType] = useState('exact');
+      const [monthlyBudget, setMonthlyBudget] = useState(500000);
+
+      const scenarios = [
+        { name: '保守', ctr: 3, cvr: 0.5, color: 'bg-blue-500' },
+        { name: '現実', ctr: 5, cvr: 0.75, color: 'bg-green-500' },
+        { name: '楽観', ctr: 7, cvr: 1, color: 'bg-purple-500' }
+      ];
+
+      const matchTypeMultiplier = {
+        exact: 1.1,
+        phrase: 1.925,
+        broad: 3.3
+      };
+
+      const calculateResults = (ctr, cvr) => {
+        const impressionsAfterLoss = searchVolume * ((100 - rankLoss) / 100);
+        const impressionsAfterMatch = impressionsAfterLoss * matchTypeMultiplier[matchType];
+        const clicks = impressionsAfterMatch * (ctr / 100);
+        const adSpend = clicks * cpc;
+        const conversions = clicks * (cvr / 100);
+        const cpa = conversions > 0 ? adSpend / conversions : 0;
+        const monthlyConversions = monthlyBudget / cpa;
+
+        return {
+          impressions: Math.round(impressionsAfterMatch),
+          clicks: Math.round(clicks),
+          adSpend: Math.round(adSpend),
+          conversions: parseFloat(conversions.toFixed(2)),
+          cpa: Math.round(cpa),
+          monthlyConversions: parseFloat(monthlyConversions.toFixed(1))
+        };
+      };
+
+      const results = scenarios.map(s => ({
+        ...s,
+        ...calculateResults(s.ctr, s.cvr)
+      }));
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                  Google広告シミュレーター
+                </h1>
+              </div>
+              <p className="text-gray-600">現実的な数値でシミュレーションを作成</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                入力項目
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    月間検索ボリューム
+                  </label>
+                  <input
+                    type="number"
+                    value={searchVolume}
+                    onChange={(e) => setSearchVolume(Number(e.target.value))}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    CPC中央値（円）
+                  </label>
+                  <input
+                    type="number"
+                    value={cpc}
+                    onChange={(e) => setCpc(Number(e.target.value))}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    ランク損失率（%）
+                  </label>
+                  <input
+                    type="number"
+                    value={rankLoss}
+                    onChange={(e) => setRankLoss(Number(e.target.value))}
+                    min="0"
+                    max="100"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">推奨：50〜60%</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    マッチタイプ
+                  </label>
+                  <select
+                    value={matchType}
+                    onChange={(e) => setMatchType(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                  >
+                    <option value="exact">完全一致（110%）</option>
+                    <option value="phrase">フレーズ一致（192.5%）</option>
+                    <option value="broad">インテントマッチ（330%）</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    月間予算（円）
+                  </label>
+                  <input
+                    type="number"
+                    value={monthlyBudget}
+                    onChange={(e) => setMonthlyBudget(Number(e.target.value))}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                シミュレーション結果
+              </h2>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                {results.map((result, idx) => (
+                  <div key={idx} className="border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                    <div className={`${result.color} text-white px-4 py-2 rounded-lg text-center font-bold mb-4`}>
+                      {result.name}シナリオ
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-gray-600">CTR</span>
+                        <span className="font-bold text-gray-800">{result.ctr}%</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-gray-600">CVR</span>
+                        <span className="font-bold text-gray-800">{result.cvr}%</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-gray-600">想定IMP</span>
+                        <span className="font-bold text-gray-800">{result.impressions.toLocaleString()}回</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-gray-600">想定CL</span>
+                        <span className="font-bold text-gray-800">{result.clicks.toLocaleString()}回</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b">
+                        <span className="text-gray-600">想定広告費</span>
+                        <span className="font-bold text-gray-800">¥{result.adSpend.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b bg-yellow-50 p-2 rounded">
+                        <span className="text-gray-600">想定CV数</span>
+                        <span className="font-bold text-lg text-indigo-600">{result.conversions}件</span>
+                      </div>
+                      <div className="flex justify-between items-center pb-2 border-b bg-yellow-50 p-2 rounded">
+                        <span className="text-gray-600">想定CPA</span>
+                        <span className="font-bold text-lg text-indigo-600">¥{result.cpa.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 bg-indigo-50 p-3 rounded-lg">
+                        <span className="text-gray-700 font-semibold">月間CV数</span>
+                        <span className="font-bold text-xl text-indigo-700">{result.monthlyConversions}件</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 p-6 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border-2 border-indigo-200">
+                <h3 className="font-bold text-gray-800 mb-3 text-lg">💡 シミュレーションのポイント</h3>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li>✓ 上司への説明は<strong>保守シナリオ</strong>をベースに行いましょう</li>
+                  <li>✓ ランク損失率50%は運用初期の現実的な数値です</li>
+                  <li>✓ 実際の運用で改善すれば、現実〜楽観シナリオに近づけます</li>
+                  <li>✓ 月間CV数は「月間予算 ÷ CPA」で自動計算しています</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<GoogleAdsSimulator />, document.getElementById('root'));
+  </script>
+</body>
+</html>
